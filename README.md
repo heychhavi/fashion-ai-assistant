@@ -30,15 +30,7 @@
    streamlit run app.py
    ```
 
-### Deployment
-1. Fork this repository to your GitHub account
-2. Visit [share.streamlit.io](https://share.streamlit.io)
-3. Sign in with your GitHub account
-4. Deploy the app:
-   - Click "New app"
-   - Select your forked repository
-   - Select main branch and app.py
-   - Add the required secrets (environment variables)
+
 
 ## Introduction
 AI Wardrobe is an innovative personal styling assistant that leverages artificial intelligence to provide personalized wardrobe recommendations. The system combines computer vision, natural language processing, and e-commerce integration to analyze users' style preferences and suggest curated outfit sets for various occasions. By understanding both visual style patterns from user-uploaded images and explicit preferences, the application creates a highly personalized shopping experience.
