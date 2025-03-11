@@ -4,6 +4,7 @@
 
 ## Quick Start
 ##App https://fashion-ai-assistant-ky6fo9oczhxvjjxhtxbwur.streamlit.app/
+## Demo https://drive.google.com/file/d/1cYcfbcwhEsTfByFqsKM_VkmXiPVxR3-P/view?usp=drive_link
 
 ### Local Development
 1. Clone the repository:
