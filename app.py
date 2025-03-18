@@ -8,7 +8,6 @@ import pathlib
 import json
 import requests
 from typing import Dict, List
-from style_analyzer import StyleAnalyzer
 
 # Load environment variables
 load_dotenv()
@@ -23,135 +22,324 @@ if 'twitter_data' not in st.session_state:
 if 'twitter_connected' not in st.session_state:
     st.session_state.twitter_connected = False
 
-# Initialize models and style analyzer
+# Initialize Gemini API
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    # Set default parameters for the model
-    generation_config = {
-        "temperature": 0.9,
-        "top_p": 1,
-        "top_k": 1,
-        "max_output_tokens": 2048,
-    }
-    
-    safety_settings = [
-        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-    ]
-    
-    # Initialize models
-    text_model = genai.GenerativeModel(
-        model_name='gemini-1.5-pro',
-        generation_config=generation_config,
-        safety_settings=safety_settings
-    )
-    vision_model = genai.GenerativeModel(
-        model_name='gemini-1.5-flash',
-        generation_config=generation_config,
-        safety_settings=safety_settings
-    )
-    
-    # Initialize style analyzer
-    style_analyzer = StyleAnalyzer(vision_model)
 else:
     st.error("GEMINI_API_KEY not found. Image analysis will be disabled.")
 
 # Initialize Shopify client
 shopify_client = None
 
-# Load dummy products
-try:
-    with open(os.path.join(os.path.dirname(__file__), 'dummy_products.json'), 'r') as f:
-        DUMMY_PRODUCTS = json.load(f)['products']
-except Exception as e:
-    print(f"Error loading dummy products: {str(e)}")
-    DUMMY_PRODUCTS = []
-
 # Shopify connector
 class ShopifyConnector:
     def __init__(self, store_url: str, access_token: str = None, storefront_token: str = None):
-        """Initialize Shopify connector with store credentials"""
+        """
+        Initialize the Shopify connector with store credentials
+        
+        Args:
+            store_url (str): The Shopify store URL (e.g., your-store.myshopify.com)
+            access_token (str, optional): The Shopify Admin API access token
+            storefront_token (str, optional): The Shopify Storefront API access token
+        """
         self.store_url = store_url
         self.access_token = access_token
         self.storefront_token = storefront_token
         self.base_url = f"https://{store_url}"
-        self.products = DUMMY_PRODUCTS
+        
+        # Set up API URLs
+        self.admin_api_url = f"{self.base_url}/admin/api/2023-10"
+        self.storefront_api_url = f"{self.base_url}/api/2023-10/graphql.json"
+        
+        # Set up headers for Admin API if token provided
+        self.admin_headers = None
+        if access_token:
+            self.admin_headers = {
+                "Content-Type": "application/json",
+                "X-Shopify-Access-Token": access_token
+            }
+        
+        # Set up headers for Storefront API if token provided
+        self.storefront_headers = None
+        if storefront_token:
+            self.storefront_headers = {
+                "Content-Type": "application/json",
+                "X-Shopify-Storefront-Access-Token": storefront_token
+            }
     
     def search_products(self, query: str, limit: int = 3) -> List[Dict]:
-        """Search for products in the local dummy products"""
-        query_terms = query.lower().split()
-        matching_products = []
+        """
+        Search for products in the Shopify store based on a query
         
-        for product in self.products:
-            # Convert product data to lowercase for comparison
-            title_lower = product['title'].lower()
-            desc_lower = product['description'].lower()
-            tags_lower = [tag.lower() for tag in product['tags']]
+        Args:
+            query (str): The search query
+            limit (int): Maximum number of products to return
             
-            # Check if all query terms appear in either title, description, or tags
-            if (all(term in title_lower for term in query_terms) or
-                all(term in desc_lower for term in query_terms) or
-                all(any(term in tag for tag in tags_lower) for term in query_terms)):
-                
-                matching_products.append({
-                    "id": product['id'],
-                    "title": product['title'],
-                    "description": product['description'],
-                    "handle": product['handle'],
-                    "url": f"{self.base_url}/products/{product['handle']}",
-                    "price": product['price'],
-                    "image_url": product['image_url']
-                })
-                
-                if len(matching_products) >= limit:
-                    break
+        Returns:
+            List[Dict]: List of product information dictionaries
+        """
+        products = []
         
-        return matching_products
-
+        # Try Admin API first if we have a token
+        if self.admin_headers:
+            try:
+                # Use Admin API to search products
+                endpoint = f"{self.admin_api_url}/products.json"
+                params = {
+                    "limit": limit,
+                    "title": query  # Search by title
+                }
+                
+                response = requests.get(endpoint, headers=self.admin_headers, params=params)
+                
+                # If successful, process the response
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if "products" in data and data["products"]:
+                        for product in data["products"]:
+                            product_info = {
+                                "id": product.get("id"),
+                                "title": product.get("title", "No title"),
+                                "description": product.get("body_html", "No description"),
+                                "handle": product.get("handle", ""),
+                                "url": f"{self.base_url}/products/{product.get('handle', '')}",
+                                "price": None,
+                                "image_url": None
+                            }
+                            
+                            # Get price from variants
+                            if "variants" in product and product["variants"]:
+                                variant = product["variants"][0]
+                                price = variant.get("price")
+                                if price:
+                                    product_info["price"] = {
+                                        "amount": price,
+                                        "currency": "USD"  # Default to USD
+                                    }
+                            
+                            # Get image URL
+                            if "images" in product and product["images"]:
+                                image = product["images"][0]
+                                product_info["image_url"] = image.get("src")
+                            
+                            products.append(product_info)
+                        
+                        return products
+                    
+                # If Admin API fails or returns no products, continue to try Storefront API
+            except Exception as e:
+                print(f"Admin API search failed: {str(e)}")
+        
+        # Try Storefront API if we have a token and Admin API didn't work
+        if self.storefront_headers and not products:
+            try:
+                # Use Storefront API with GraphQL
+                graphql_query = """
+                query searchProducts($query: String!, $first: Int!) {
+                  products(query: $query, first: $first) {
+                    edges {
+                      node {
+                        id
+                        title
+                        description
+                        handle
+                        onlineStoreUrl
+                        priceRange {
+                          minVariantPrice {
+                            amount
+                            currencyCode
+                          }
+                        }
+                        images(first: 1) {
+                          edges {
+                            node {
+                              url
+                              altText
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """
+                
+                # Variables for the query
+                variables = {
+                    "query": query,
+                    "first": limit
+                }
+                
+                # Make the request
+                response = requests.post(
+                    self.storefront_api_url,
+                    headers=self.storefront_headers,
+                    json={"query": graphql_query, "variables": variables}
+                )
+                
+                # Check if the request was successful
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Extract product information
+                    if "data" in data and "products" in data["data"] and "edges" in data["data"]["products"]:
+                        for edge in data["data"]["products"]["edges"]:
+                            node = edge["node"]
+                            
+                            # Extract price
+                            price_info = None
+                            if "priceRange" in node and "minVariantPrice" in node["priceRange"]:
+                                price_data = node["priceRange"]["minVariantPrice"]
+                                price_info = {
+                                    "amount": price_data.get("amount", ""),
+                                    "currency": price_data.get("currencyCode", "USD")
+                                }
+                            
+                            # Extract image
+                            image_url = None
+                            if "images" in node and "edges" in node["images"] and len(node["images"]["edges"]) > 0:
+                                image_data = node["images"]["edges"][0]["node"]
+                                image_url = image_data.get("url", "")
+                            
+                            # Create product object
+                            product = {
+                                "id": node.get("id", ""),
+                                "title": node.get("title", "No title"),
+                                "description": node.get("description", ""),
+                                "url": node.get("onlineStoreUrl", f"{self.base_url}/products/{node.get('handle', '')}"),
+                                "price": price_info,
+                                "image_url": image_url
+                            }
+                            
+                            products.append(product)
+            except Exception as e:
+                print(f"Storefront API search failed: {str(e)}")
+        
+        return products
+    
     def get_product_recommendations(self, product_id: str, limit: int = 3) -> List[Dict]:
-        """Get product recommendations based on a product ID"""
+        """
+        Get product recommendations based on a product ID
+        
+        Args:
+            product_id (str): The product ID to get recommendations for
+            limit (int): Maximum number of recommendations to return
+            
+        Returns:
+            List[Dict]: List of recommended product information dictionaries
+        """
         try:
-            # Find the source product
-            source_product = next((p for p in self.products if p['id'] == product_id), None)
-            if not source_product:
-                return []
-            
-            # Get products with matching category or tags
-            recommendations = []
-            for product in self.products:
-                if product['id'] == product_id:
-                    continue
-                
-                # Check if categories match or if there are common tags
-                if (product['category'] == source_product['category'] or 
-                    any(tag in source_product['tags'] for tag in product['tags'])):
+            # Try to get recommendations using Admin API first
+            if self.admin_headers:
+                try:
+                    # For simplicity, just return other products from the store
+                    # In a real implementation, you would use a recommendation algorithm
+                    endpoint = f"{self.admin_api_url}/products.json"
+                    params = {"limit": limit}
                     
-                    recommendations.append({
-                        "id": product['id'],
-                        "title": product['title'],
-                        "description": product['description'],
-                        "handle": product['handle'],
-                        "url": f"{self.base_url}/products/{product['handle']}",
-                        "price": product['price'],
-                        "image_url": product['image_url']
-                    })
+                    response = requests.get(endpoint, headers=self.admin_headers, params=params)
                     
-                    if len(recommendations) >= limit:
-                        break
+                    if response.status_code == 200:
+                        data = response.json()
+                        recommendations = []
+                        
+                        if "products" in data and data["products"]:
+                            for product in data["products"]:
+                                # Skip the original product
+                                if str(product.get("id")) == str(product_id):
+                                    continue
+                                    
+                                product_info = {
+                                    "id": product.get("id"),
+                                    "title": product.get("title", "No title"),
+                                    "description": product.get("body_html", "No description"),
+                                    "handle": product.get("handle", ""),
+                                    "url": f"{self.base_url}/products/{product.get('handle', '')}",
+                                    "price": None,
+                                    "image_url": None
+                                }
+                                
+                                # Get price from variants
+                                if "variants" in product and product["variants"]:
+                                    variant = product["variants"][0]
+                                    price = variant.get("price")
+                                    if price:
+                                        product_info["price"] = {
+                                            "amount": price,
+                                            "currency": "USD"  # Default to USD
+                                        }
+                                
+                                # Get image URL
+                                if "images" in product and product["images"]:
+                                    image = product["images"][0]
+                                    product_info["image_url"] = image.get("src")
+                                
+                                recommendations.append(product_info)
+                                
+                                if len(recommendations) >= limit:
+                                    break
+                            
+                            return recommendations
+                except Exception as e:
+                    print(f"Admin API recommendations failed: {str(e)}")
             
-            return recommendations
+            # If Admin API didn't work or we only have Storefront API access
+            if self.storefront_headers:
+                # Use Storefront API to get other products
+                return self.search_products("", limit)
+            
+            return []
         except Exception as e:
             print(f"Error getting product recommendations: {str(e)}")
             return []
+    
+    def search_with_pinai(self, query: str, limit: int = 3) -> List[Dict]:
+        """
+        Search for products using PinAI data connector
+        
+        Args:
+            query (str): The search query
+            limit (int): Maximum number of products to return
+            
+        Returns:
+            List[Dict]: List of product information dictionaries
+        """
+        if not self.pinai_client:
+            return self.search_products(query, limit)
+        
+        try:
+            # In a real implementation, we would use the PinAI data connector to search Shopify
+            # For now, we'll simulate this by adding a small delay and then using the direct API
+            st.info(f"Using PinAI data connector to search Shopify for: {query}")
+            time.sleep(1)  # Simulate PinAI processing
+            
+            # Use the regular search function for now
+            return self.search_products(query, limit)
+        
+        except Exception as e:
+            st.error(f"Error using PinAI to search Shopify: {str(e)}")
+            return []
 
-# Initialize Shopify client with dummy data
-shopify_client = ShopifyConnector("example-store.myshopify.com")
+# Initialize Shopify client if credentials are available
+if SHOPIFY_STORE_URL and (SHOPIFY_ACCESS_TOKEN or SHOPIFY_STOREFRONT_TOKEN):
+    try:
+        # Clean up URL to get just the domain
+        shopify_domain = SHOPIFY_STORE_URL
+        if shopify_domain.startswith(("http://", "https://")):
+            shopify_domain = shopify_domain.split("//", 1)[1]
+        shopify_domain = shopify_domain.rstrip("/")
+        
+        shopify_client = ShopifyConnector(shopify_domain, SHOPIFY_ACCESS_TOKEN, SHOPIFY_STOREFRONT_TOKEN)
+    except Exception as e:
+        st.warning(f"Failed to initialize Shopify API: {str(e)}")
+else:
+    st.warning("Shopify API credentials not found. Shopify product search will be disabled.")
 
 def get_twitter_style_data(username):
     """Fetch user's fashion preferences and recent tweets from Twitter (simulated)"""
     try:
+        # Simulated response for demonstration
         simulated_data = {
             "user_info": {
                 "username": username,
@@ -177,6 +365,7 @@ def enhance_prompt_with_twitter_data(base_prompt, twitter_data):
     if not twitter_data:
         return base_prompt
     
+    # Extract style preferences from Twitter data
     fashion_interests = twitter_data.get("fashion_interests", [])
     color_preferences = twitter_data.get("color_preferences", [])
     recent_tweets = twitter_data.get("recent_fashion_tweets", [])
@@ -202,52 +391,32 @@ def enhance_prompt_with_twitter_data(base_prompt, twitter_data):
 
 def extract_search_terms(recommendation_text):
     """Extract key fashion items from recommendation text"""
-    # First try using regex pattern matching as a reliable fallback
-    def extract_with_regex(text):
-        patterns = [
-            r'((?:black|white|navy|blue|red|gray|grey|brown)\s+(?:leather\s+)?(?:jacket|blazer|shirt|pants|trousers|dress|skirt|shoes|boots|heels|flats))',
-            r'((?:oversized|fitted|tailored|classic|formal|casual)\s+(?:white|black|navy|blue)\s+(?:shirt|t-shirt|blouse|jacket|blazer|dress))',
-            r'((?:leather|denim|wool|cotton)\s+(?:jacket|pants|shirt|dress|skirt))',
-            r'([\w\s]+(?:jacket|shirt|pants|shoes|dress|hat|sweater|jeans|boots|sneakers|coat|blazer|flats|heels))'
-        ]
-        
-        items = set()
-        for pattern in patterns:
-            matches = re.findall(pattern, recommendation_text.lower())
-            items.update(match.strip() for match in matches if len(match.strip()) > 5)
-        
-        return list(items)
+    # Create a specific prompt to identify key items
+    prompt = f"""
+    Extract only the main fashion items mentioned in this outfit recommendation. 
+    Format as a comma-separated list of specific search terms. 
+    Focus on individual items (like "black leather jacket" or "white sneakers"), 
+    not styles or outfit concepts.
     
-    # Try using Gemini API first
+    RECOMMENDATION TEXT:
+    {recommendation_text}
+    
+    ITEMS:
+    """
+    
     try:
-        prompt = f"""
-        Extract only the main fashion items mentioned in this outfit recommendation. 
-        Format as a comma-separated list of specific search terms. 
-        Focus on individual items (like "black leather jacket" or "white sneakers"), 
-        not styles or outfit concepts.
-        
-        RECOMMENDATION TEXT:
-        {recommendation_text}
-        
-        ITEMS:
-        """
-        
-        response = text_model.generate_content(prompt)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
         response.resolve()
         
         search_terms = response.text.strip()
-        terms = [term.strip() for term in search_terms.split(',') if term.strip()]
-        
-        # If Gemini returned valid terms, use them
-        if terms:
-            return terms
-        
-        # Otherwise fall back to regex
-        return extract_with_regex(recommendation_text)
-        
+        # Split by commas and clean up
+        return [term.strip() for term in search_terms.split(',') if term.strip()]
     except Exception as e:
-        st.warning("Using fallback search term extraction due to API limits.")
-        return extract_with_regex(recommendation_text)
+        st.error(f"Error extracting search terms: {str(e)}")
+        # Fallback: try basic extraction with regex
+        items = re.findall(r'([\w\s]+(?:jacket|shirt|pants|shoes|dress|hat|sweater|jeans|boots|sneakers|coat))', recommendation_text.lower())
+        return [item.strip() for item in items if len(item.strip()) > 5]
 
 def search_shopify_products(search_term, limit=3):
     """Search for products on Shopify"""
@@ -255,6 +424,7 @@ def search_shopify_products(search_term, limit=3):
         return None
     
     try:
+        # Search for products using Shopify API
         products = shopify_client.search_products(search_term, limit)
         return products
     except Exception as e:
@@ -337,170 +507,100 @@ if uploaded_file is not None:
     img_path = f"temp_{uploaded_file.name}"
     with open(img_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
-    
+
     # Display the uploaded image
-    st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
-    
+    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+
     if st.button("Analyze Image"):
         with st.spinner("Analyzing image..."):
             try:
+                # Read the image file as bytes
+                image_data = pathlib.Path(img_path).read_bytes()
+                
                 # Get user preferences
-                preferences = {
-                    'occasion': st.session_state.get('occasion', ''),
-                    'budget': st.session_state.get('budget', ''),
-                    'colors': st.session_state.get('colors', []),
-                    'brands': st.session_state.get('brands', ''),
-                    'requirements': st.session_state.get('requirements', '')
-                }
+                occasion = st.session_state.get('occasion', '')
+                budget = st.session_state.get('budget', '')
+                colors = st.session_state.get('colors', [])
+                brands = st.session_state.get('brands', '')
+                requirements = st.session_state.get('requirements', '')
                 
-                # Get style analysis
-                analysis_results = style_analyzer.analyze_image(
-                    image_path=img_path,
-                    preferences=preferences,
-                    twitter_data=st.session_state.get("twitter_data")
+                # Create base prompt
+                base_prompt = f"""
+                Analyze this fashion image and provide recommendations considering these preferences:
+                - Occasion: {occasion}
+                - Budget range: {budget}
+                - Preferred colors: {', '.join(colors) if colors else 'Any'}
+                - Preferred brands: {brands if brands else 'Any'}
+                - Special requirements: {requirements if requirements else 'None'}
+                
+                Please provide:
+                1. A detailed description of the outfit
+                2. Style analysis (occasion, style category)
+                3. Specific fashion items identified
+                4. Styling recommendations that match the preferences above
+                """
+
+                # Enhance prompt with Twitter data if available
+                if st.session_state.get("twitter_data"):
+                    base_prompt = enhance_prompt_with_twitter_data(base_prompt, st.session_state.twitter_data)
+
+                # Get Gemini's analysis
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(
+                    contents=[
+                        base_prompt,
+                        {"mime_type": "image/jpeg", "data": image_data}
+                    ]
                 )
+                response.resolve()
                 
-                # Display analysis results
+                # Display analysis
                 st.markdown("### Image Analysis")
+                st.write(response.text)
                 
-                # Description
-                st.markdown("#### Description")
-                st.write(analysis_results['description'])
-                
-                # Style Category and Occasions
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("#### Style Category")
-                    st.write(analysis_results['style_category'])
-                with col2:
-                    st.markdown("#### Suitable Occasions")
-                    st.write(", ".join(analysis_results['suitable_occasions']))
-                
-                # Color Palette
-                st.markdown("#### Color Palette")
-                st.write(", ".join(analysis_results['color_palette']))
-                
-                # Identified Items
-                st.markdown("#### Identified Items")
-                for item in analysis_results['identified_items']:
-                    st.write(f"- {item}")
-                
-                # Detailed Recommendations
-                st.markdown("### Styling Recommendations")
-                st.markdown(f"For a {st.session_state.get('occasion', '')} (Budget: {st.session_state.get('budget', '')})")
-                
-                # Outerwear
-                if analysis_results['detailed_recommendations']['outerwear']['details']:
-                    with st.expander("Outerwear", expanded=True):
-                        st.markdown(f"**Budget: {analysis_results['detailed_recommendations']['outerwear']['budget']}**")
-                        st.write(analysis_results['detailed_recommendations']['outerwear']['details'])
-                
-                # Top/Shirt
-                if analysis_results['detailed_recommendations']['top']['details']:
-                    with st.expander("Top/Shirt", expanded=True):
-                        st.markdown(f"**Budget: {analysis_results['detailed_recommendations']['top']['budget']}**")
-                        st.write(analysis_results['detailed_recommendations']['top']['details'])
-                
-                # Bottom
-                if analysis_results['detailed_recommendations']['bottom']['details']:
-                    with st.expander("Bottom", expanded=True):
-                        st.markdown(f"**Budget: {analysis_results['detailed_recommendations']['bottom']['budget']}**")
-                        st.write(analysis_results['detailed_recommendations']['bottom']['details'])
-                
-                # Shoes
-                if analysis_results['detailed_recommendations']['shoes']['details']:
-                    with st.expander("Shoes", expanded=True):
-                        st.markdown(f"**Budget: {analysis_results['detailed_recommendations']['shoes']['budget']}**")
-                        st.write(analysis_results['detailed_recommendations']['shoes']['details'])
-                
-                # Additional Recommendations
-                if analysis_results['additional_recommendations']:
-                    st.markdown("#### Additional Styling Tips")
-                    for tip in analysis_results['additional_recommendations']:
-                        st.write(f"- {tip}")
+                # Extract search terms for product search
+                search_terms = extract_search_terms(response.text)
                 
                 # Product search section
-                if shopify_client:
-                    st.markdown("### Shop Similar Items")
-                    
-                    # Extract search terms from recommendations
-                    search_terms = []
-                    
-                    # Process outerwear recommendations
-                    if details := analysis_results['detailed_recommendations']['outerwear']['details']:
-                        details_text = details.lower()
-                        if 'navy' in details_text and 'blazer' in details_text:
-                            search_terms.append('navy blue blazer')
-                        elif 'black' in details_text and 'blazer' in details_text:
-                            search_terms.append('classic black blazer')
-                        elif 'blazer' in details_text:
-                            search_terms.append('blazer')
-                    
-                    # Process top recommendations
-                    if details := analysis_results['detailed_recommendations']['top']['details']:
-                        details_text = details.lower()
-                        if 'button-down' in details_text or ('white' in details_text and 'shirt' in details_text):
-                            search_terms.append('white button-down shirt')
-                        elif 'oversized' in details_text and 't-shirt' in details_text:
-                            search_terms.append('oversized white t-shirt')
-                    
-                    # Process bottom recommendations
-                    if details := analysis_results['detailed_recommendations']['bottom']['details']:
-                        details_text = details.lower()
-                        if 'navy' in details_text and 'trousers' in details_text:
-                            search_terms.append('navy blue tailored trousers')
-                        elif 'black' in details_text and 'leggings' in details_text:
-                            search_terms.append('black leather leggings')
-                    
-                    # Process shoes recommendations
-                    if details := analysis_results['detailed_recommendations']['shoes']['details']:
-                        details_text = details.lower()
-                        if 'flats' in details_text:
-                            search_terms.append('black dress flats')
-                        elif 'heels' in details_text:
-                            search_terms.append('navy high heels')
-                    
-                    # If no specific matches found, add some default terms
-                    if not search_terms:
-                        search_terms = ['blazer', 'white button-down shirt', 'navy blue tailored trousers']
+                if shopify_client and search_terms:
+                    st.subheader("Similar Products on Shopify")
                     
                     with st.expander("View Search Terms"):
                         st.write(", ".join(search_terms))
                     
-                    # Search for products
-                    shown_products = set()  # Track shown products to avoid duplicates
-                    for term in search_terms:
+                    for term in search_terms[:3]:
                         st.markdown(f"#### Products matching: {term}")
                         with st.spinner(f"Searching Shopify for {term}..."):
                             products = shopify_client.search_products(term)
                             
                             if products:
                                 for product in products:
-                                    # Skip if we've already shown this product
-                                    if product['id'] in shown_products:
-                                        continue
-                                        
-                                    shown_products.add(product['id'])
                                     col1, col2 = st.columns([1, 2])
                                     with col1:
-                                        try:
-                                            if product.get("image_url"):
-                                                image_url = product["image_url"]
-                                                if "unsplash.com" in image_url:
-                                                    # Check if URL already has parameters
-                                                    if "?" in image_url:
-                                                        image_url = image_url.replace("auto=format&fit=crop&q=80", "w=300&h=400&fit=crop&q=80")
-                                                    else:
-                                                        image_url = f"{image_url}?w=300&h=400&fit=crop&q=80"
-                                                try:
-                                                    st.image(image_url, use_container_width=True)
-                                                except:
-                                                    st.info("Unable to load image")
-                                            else:
-                                                st.info("No image available")
-                                        except Exception as e:
-                                            st.info("Unable to load image")
-                                            
+                                        if product.get("image_url"):
+                                            st.image(product["image_url"], width=150)
+                                    with col2:
+                                        st.markdown(f"**{product['title']}**")
+                                        if product.get("price"):
+                                            st.write(f"Price: ${product['price']['amount']} {product['price']['currency']}")
+                                        if product.get("url"):
+                                            st.markdown(f"[View on Shopify]({product['url']})")
+                            else:
+                                st.info("No products found for this search term.")
+                    
+                    # Manual search option
+                    st.markdown("### Search for Specific Items")
+                    search_query = st.text_input("Enter your search term:")
+                    if search_query and st.button("Search"):
+                        with st.spinner(f"Searching Shopify for {search_query}..."):
+                            products = shopify_client.search_products(search_query)
+                            
+                            if products:
+                                for product in products:
+                                    col1, col2 = st.columns([1, 2])
+                                    with col1:
+                                        if product.get("image_url"):
+                                            st.image(product["image_url"], width=150)
                                     with col2:
                                         st.markdown(f"**{product['title']}**")
                                         if product.get("price"):
@@ -512,6 +612,6 @@ if uploaded_file is not None:
                 
             except Exception as e:
                 st.error(f"Error: {str(e)}")
-        
+
         # Remove temporary file after processing
         os.remove(img_path)

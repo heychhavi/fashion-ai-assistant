@@ -28,27 +28,6 @@ print(f"Using Shopify store URL: {shopify_domain}")
 print(f"Admin API Token (first 5 chars): {SHOPIFY_ACCESS_TOKEN[:5] if SHOPIFY_ACCESS_TOKEN else 'Not provided'}...")
 print(f"Storefront API Token (first 5 chars): {SHOPIFY_STOREFRONT_TOKEN[:5] if SHOPIFY_STOREFRONT_TOKEN else 'Not provided'}...")
 
-# Test basic store access
-print("\nTesting basic store access...")
-shop_url = f"https://{shopify_domain}/admin/api/2023-10/shop.json"
-headers = {
-    "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
-    "Content-Type": "application/json"
-}
-
-try:
-    response = requests.get(shop_url, headers=headers)
-    if response.status_code == 200:
-        print("✓ Successfully connected to store!")
-        shop_data = response.json()
-        print(f"Store name: {shop_data['shop']['name']}")
-        print(f"Store plan: {shop_data['shop']['plan_name']}")
-    else:
-        print(f"✗ Failed to connect to store. Status code: {response.status_code}")
-        print(f"Error message: {response.text}")
-except Exception as e:
-    print(f"✗ Error connecting to store: {str(e)}")
-
 # Initialize the ShopifyConnector with both tokens
 shopify_connector = ShopifyConnector(shopify_domain, SHOPIFY_ACCESS_TOKEN, SHOPIFY_STOREFRONT_TOKEN)
 

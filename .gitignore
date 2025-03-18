@@ -1,3 +1,6 @@
+# Environment variables
+.env
+
 # Python
 __pycache__/
 *.py[cod]
@@ -31,19 +34,13 @@ ENV/
 *.swp
 *.swo
 
-# Environment variables
-.env
-
-# Streamlit
-.streamlit/
-
 # Temporary files
 temp_*
 *.tmp
 
 # Logs
 *.log
+logs/
 
-# OS specific
+# Local development
 .DS_Store
-Thumbs.db 
