@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>AI Wardrobe: A Smart Personal Styling Assistant</title>
+<style>
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #fff;
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+h2 {
+    color: #2980b9;
+    margin-top: 30px;
+}
+
+h3 {
+    color: #34495e;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 20px 0;
+}
+
+ul, ol {
+    padding-left: 25px;
+}
+
+li {
+    margin: 8px 0;
+}
+
+strong {
+    color: #2c3e50;
+}
+
+.block-diagram {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.sample-interaction {
+    background: #f5f6fa;
+    padding: 15px;
+    border-left: 4px solid #3498db;
+    margin: 10px 0;
+}
+</style>
+</head>
+<body>
+<h1 id="ai-wardrobe-a-smart-personal-styling-assistant">AI Wardrobe: A
+Smart Personal Styling Assistant</h1>
+<hr />
+<h2 id="introduction">Introduction</h2>
+<p>AI Wardrobe is an innovative personal styling assistant that
+leverages artificial intelligence to provide personalized wardrobe
+recommendations. The system combines computer vision, natural language
+processing, and e-commerce integration to analyze users’ style
+preferences and suggest curated outfit sets for various occasions. By
+understanding both visual style patterns from user-uploaded images and
+explicit preferences, the application creates a highly personalized
+shopping experience.</p>
+<h2 id="existing-solutions-and-their-limitations">Existing Solutions and
+Their Limitations</h2>
+<h3 id="current-market-solutions">Current Market Solutions:</h3>
+<ol type="1">
+<li><strong>Traditional E-commerce Platforms</strong>
+<ul>
+<li>Limited personalization</li>
+<li>No visual style analysis</li>
+<li>Manual browsing through vast catalogs</li>
+</ul></li>
+<li><strong>Personal Styling Services (e.g., Stitch Fix)</strong>
+<ul>
+<li>High cost</li>
+<li>Long wait times</li>
+<li>Limited to specific brands</li>
+<li>Requires human stylists</li>
+</ul></li>
+<li><strong>Fashion Apps</strong>
+<ul>
+<li>Basic outfit recommendations</li>
+<li>No real-time shopping integration</li>
+<li>Limited understanding of personal style</li>
+</ul></li>
+</ol>
+<h3 id="limitations-of-existing-solutions">Limitations of Existing
+Solutions:</h3>
+<ul>
+<li>Lack of AI-powered visual analysis</li>
+<li>No real-time recommendations</li>
+<li>Limited integration with e-commerce platforms</li>
+<li>High dependency on human intervention</li>
+<li>Inability to learn from user preferences</li>
+</ul>
+<h2 id="our-approach">Our Approach</h2>
+<h3 id="key-features">Key Features:</h3>
+<ol type="1">
+<li><strong>Visual Style Analysis</strong>
+<ul>
+<li>Uses Google’s Gemini 1.5 Flash model for image analysis</li>
+<li>Extracts style patterns, colors, and preferences</li>
+<li>Understands outfit compositions and combinations</li>
+</ul></li>
+<li><strong>Personalization Engine</strong>
+<ul>
+<li>Considers occasion/event type</li>
+<li>Accounts for budget constraints</li>
+<li>Incorporates color and brand preferences</li>
+<li>Adapts to special requirements</li>
+</ul></li>
+<li><strong>E-commerce Integration</strong>
+<ul>
+<li>Direct integration with Shopify stores</li>
+<li>Real-time product search and recommendations</li>
+<li>Price comparison and tracking</li>
+<li>Quick purchase functionality</li>
+</ul></li>
+<li><strong>Interactive User Interface</strong>
+<ul>
+<li>Streamlit-based web application</li>
+<li>Real-time feedback and updates</li>
+<li>Easy image upload and preference setting</li>
+<li>Saved wardrobe sets feature</li>
+</ul></li>
+</ol>
+<h2 id="data-sources-used">Data Sources Used</h2>
+<ol type="1">
+<li><strong>User-Provided Data</strong>
+<ul>
+<li>Style inspiration images</li>
+<li>Event/occasion preferences</li>
+<li>Budget constraints</li>
+<li>Color and brand preferences</li>
+<li>Special requirements</li>
+</ul></li>
+<li><strong>Shopify Product Data</strong>
+<ul>
+<li>Product catalogs</li>
+<li>Pricing information</li>
+<li>Availability status</li>
+<li>Product images</li>
+<li>Store information</li>
+</ul></li>
+<li><strong>AI Model Data</strong>
+<ul>
+<li>Gemini 1.5 Flash model for image analysis</li>
+<li>Style pattern recognition</li>
+<li>Fashion trend analysis</li>
+<li>Color palette analysis</li>
+</ul></li>
+</ol>
+<h2 id="system-design-and-code-explanation">System Design and Code
+Explanation</h2>
+<h3 id="block-diagram">Block Diagram</h3>
+<p>System Architecture: - User Interface Layer - Application Layer -
+Service Layer - Integration Layer - External Services</p>
+<h3 id="key-components">Key Components:</h3>
+<ol type="1">
+<li><strong>User Interface (Streamlit)</strong>
+<ul>
+<li>Image upload functionality</li>
+<li>Preference selection</li>
+<li>Results display</li>
+<li>Shopping integration</li>
+</ul></li>
+<li><strong>Application Logic</strong>
+<ul>
+<li>Style analysis</li>
+<li>Recommendation generation</li>
+<li>Product matching</li>
+<li>Cart management</li>
+</ul></li>
+<li><strong>Service Integration</strong>
+<ul>
+<li>Gemini API client</li>
+<li>Shopify API client</li>
+<li>Image processing</li>
+<li>Data management</li>
+</ul></li>
+<li><strong>External Services</strong>
+<ul>
+<li>Google Gemini API</li>
+<li>Shopify Storefront API</li>
+<li>Image storage</li>
+<li>Session management</li>
+</ul></li>
+</ol>
+<h2 id="sample-interactions">Sample Interactions</h2>
+<ol type="1">
+<li><strong>Style Analysis</strong>
+<ul>
+<li>Input: User uploads 3 style inspiration images</li>
+<li>Process: System analyzes images using Gemini 1.5 Flash</li>
+<li>Output: Detailed style analysis with patterns and preferences</li>
+</ul></li>
+<li><strong>Outfit Recommendation</strong>
+<ul>
+<li>Input: User selects “Business Meeting” and “$200-500” budget</li>
+<li>Process: System generates 3 complete outfit sets</li>
+<li>Output: Curated items with shopping links and costs</li>
+</ul></li>
+<li><strong>Shopping Integration</strong>
+<ul>
+<li>Input: User clicks “Quick Purchase” on a set</li>
+<li>Process: System creates cart with selected items</li>
+<li>Output: Ready-to-checkout Shopify cart</li>
+</ul></li>
+</ol>
+<h2 id="limitations">Limitations</h2>
+<ol type="1">
+<li><strong>Technical Limitations</strong>
+<ul>
+<li>Dependency on external API availability</li>
+<li>Image processing constraints</li>
+<li>Limited to Shopify-integrated stores</li>
+</ul></li>
+<li><strong>Functional Limitations</strong>
+<ul>
+<li>No real-time try-on capability</li>
+<li>Limited to available product inventory</li>
+<li>No size recommendation system</li>
+</ul></li>
+<li><strong>User Experience Limitations</strong>
+<ul>
+<li>Requires good quality input images</li>
+<li>Limited to predefined event types</li>
+<li>No social sharing features</li>
+</ul></li>
+</ol>
+<h2 id="future-scope">Future Scope</h2>
+<ol type="1">
+<li><strong>Technical Enhancements</strong>
+<ul>
+<li>Virtual try-on integration</li>
+<li>Size recommendation AI</li>
+<li>Multi-platform e-commerce integration</li>
+</ul></li>
+<li><strong>Feature Additions</strong>
+<ul>
+<li>Wardrobe organization tools</li>
+<li>Style history tracking</li>
+<li>Social sharing capabilities</li>
+<li>Seasonal trend analysis</li>
+</ul></li>
+<li><strong>Business Expansion</strong>
+<ul>
+<li>Multi-store integration</li>
+<li>International market support</li>
+<li>Mobile app development</li>
+<li>Subscription-based premium features</li>
+</ul></li>
+<li><strong>AI Improvements</strong>
+<ul>
+<li>Enhanced style learning</li>
+<li>Trend prediction</li>
+<li>Personalized pricing alerts</li>
+<li>Style evolution tracking</li>
+</ul></li>
+</ol>

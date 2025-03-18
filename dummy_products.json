@@ -1,0 +1,134 @@
+{
+  "products": [
+    {
+      "id": "1001",
+      "title": "Classic Black Blazer",
+      "description": "A timeless black blazer perfect for business meetings and formal occasions. Made from high-quality wool blend with a modern fit.",
+      "handle": "classic-black-blazer",
+      "price": {
+        "amount": "199.99",
+        "currency": "USD"
+      },
+      "category": "Business",
+      "tags": ["blazer", "business", "formal", "black"],
+      "image_url": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1002",
+      "title": "White Button-Down Shirt",
+      "description": "Crisp white cotton shirt with a classic collar and button-down design. Perfect for professional settings.",
+      "handle": "white-button-down-shirt",
+      "price": {
+        "amount": "79.99",
+        "currency": "USD"
+      },
+      "category": "Business",
+      "tags": ["shirt", "business", "formal", "white"],
+      "image_url": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1003",
+      "title": "Black Leather Jacket",
+      "description": "Edgy black leather jacket with silver hardware. Perfect for casual outings and evening events.",
+      "handle": "black-leather-jacket",
+      "price": {
+        "amount": "299.99",
+        "currency": "USD"
+      },
+      "category": "Casual",
+      "tags": ["jacket", "leather", "casual", "black"],
+      "image_url": "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1004",
+      "title": "Navy Blue Tailored Trousers",
+      "description": "Professional navy blue trousers with a modern tapered fit. Ideal for business meetings.",
+      "handle": "navy-blue-tailored-trousers",
+      "price": {
+        "amount": "149.99",
+        "currency": "USD"
+      },
+      "category": "Business",
+      "tags": ["trousers", "business", "formal", "navy"],
+      "image_url": "https://images.unsplash.com/photo-1594938374182-a557760bc35f?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1005",
+      "title": "Black Leather Leggings",
+      "description": "Sleek black leather leggings perfect for a night out or edgy casual look.",
+      "handle": "black-leather-leggings",
+      "price": {
+        "amount": "89.99",
+        "currency": "USD"
+      },
+      "category": "Casual",
+      "tags": ["leggings", "leather", "casual", "black"],
+      "image_url": "https://images.unsplash.com/photo-1548624313-0396c75e4b63?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1006",
+      "title": "Navy Blue Blazer",
+      "description": "Professional navy blue blazer with a modern cut. Perfect for business meetings.",
+      "handle": "navy-blue-blazer",
+      "price": {
+        "amount": "189.99",
+        "currency": "USD"
+      },
+      "category": "Business",
+      "tags": ["blazer", "business", "formal", "navy"],
+      "image_url": "https://images.unsplash.com/photo-1594938298615-c1e1d9c99255?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1007",
+      "title": "Black Dress Flats",
+      "description": "Comfortable black leather flats suitable for all-day wear at the office.",
+      "handle": "black-dress-flats",
+      "price": {
+        "amount": "129.99",
+        "currency": "USD"
+      },
+      "category": "Business",
+      "tags": ["shoes", "flats", "business", "black"],
+      "image_url": "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1008",
+      "title": "Navy Blue Dress",
+      "description": "Elegant navy blue dress perfect for business meetings or formal events.",
+      "handle": "navy-blue-dress",
+      "price": {
+        "amount": "159.99",
+        "currency": "USD"
+      },
+      "category": "Business",
+      "tags": ["dress", "business", "formal", "navy"],
+      "image_url": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1009",
+      "title": "Oversized White T-Shirt",
+      "description": "Comfortable oversized white t-shirt made from premium cotton.",
+      "handle": "oversized-white-tshirt",
+      "price": {
+        "amount": "39.99",
+        "currency": "USD"
+      },
+      "category": "Casual",
+      "tags": ["t-shirt", "casual", "white", "oversized"],
+      "image_url": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "1010",
+      "title": "Navy High Heels",
+      "description": "Classic navy blue high heels perfect for formal occasions.",
+      "handle": "navy-high-heels",
+      "price": {
+        "amount": "159.99",
+        "currency": "USD"
+      },
+      "category": "Business",
+      "tags": ["shoes", "heels", "formal", "navy"],
+      "image_url": "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80"
+    }
+  ]
+} 

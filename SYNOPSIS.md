@@ -2,37 +2,6 @@
 
 ---
 
-## Quick Start
-##App https://fashion-ai-assistant-ky6fo9oczhxvjjxhtxbwur.streamlit.app/
-## Demo [https://drive.google.com/file/d/1cYcfbcwhEsTfByFqsKM_VkmXiPVxR3-P/view?usp=drive_link](https://drive.google.com/file/d/1P9recn5rYcIR63vQE-092RcdltydAx4s/view?usp=drive_link)
-
-### Local Development
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/ai-wardrobe.git
-   cd ai-wardrobe
-   ```
-
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Set up environment variables in `.env` file:
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key
-   SHOPIFY_STORE_URL=your_shopify_store_url
-   SHOPIFY_ACCESS_TOKEN=your_shopify_access_token
-   SHOPIFY_STOREFRONT_TOKEN=your_shopify_storefront_token
-   ```
-
-4. Run the app:
-   ```bash
-   streamlit run app.py
-   ```
-
-
-
 ## Introduction
 AI Wardrobe is an innovative personal styling assistant that leverages artificial intelligence to provide personalized wardrobe recommendations. The system combines computer vision, natural language processing, and e-commerce integration to analyze users' style preferences and suggest curated outfit sets for various occasions. By understanding both visual style patterns from user-uploaded images and explicit preferences, the application creates a highly personalized shopping experience.
 
